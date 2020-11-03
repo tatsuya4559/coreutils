@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <time.h>
+#include "utmplib.h"
 
 #define SHOWHOST
 
@@ -11,19 +12,17 @@ void show_info(struct utmp *);
 void show_time(long);
 
 int main(void) {
-    struct utmp current_record;
-    int utmpfd;
-    int reclen = sizeof(current_record);
+    struct utmp *utbufp;
 
-    if ((utmpfd = open(UTMP_FILE, O_RDONLY)) == -1) {
+    if (open_utmp(UTMP_FILE) == -1) {
         perror(UTMP_FILE);
         exit(1);
     }
 
-    while (read(utmpfd, &current_record, reclen) == reclen) {
-        show_info(&current_record);
+    while ((utbufp = next_utmp()) != ((struct utmp*) NULL)) {
+        show_info(utbufp);
     }
-    close(utmpfd);
+    close_utmp();
 
     return 0;
 }
