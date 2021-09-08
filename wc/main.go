@@ -8,16 +8,20 @@ import (
 	"os"
 	"strings"
 	"unicode"
+)
 
-	"github.com/mattn/go-isatty"
+var (
+	l = flag.Bool("l", false, "count lines")
+	w = flag.Bool("w", false, "count words")
+	c = flag.Bool("c", false, "count chars")
 )
 
 func main() {
 	flag.Parse()
 
-	if !isatty.IsTerminal(os.Stdin.Fd()) {
+	if len(flag.Args()) < 1 {
 		nlines, nwords, nchars := count(os.Stdin)
-		fmt.Printf("%d %d %d\n", nlines, nwords, nchars)
+		printCount(nlines, nwords, nchars, "")
 		os.Exit(0)
 	}
 
@@ -31,7 +35,7 @@ func main() {
 			}
 			defer file.Close()
 			nlines, nwords, nchars := count(file)
-			fmt.Printf("%d %d %d %s\n", nlines, nwords, nchars, filepath)
+			printCount(nlines, nwords, nchars, filepath)
 			totalLines += nlines
 			totalWords += nwords
 			totalChars += nchars
@@ -39,7 +43,7 @@ func main() {
 	}
 
 	if len(flag.Args()) > 1 {
-		fmt.Printf("%d %d %d total\n", totalLines, totalWords, totalChars)
+		printCount(totalLines, totalWords, totalChars, "total")
 	}
 }
 
@@ -54,4 +58,27 @@ func count(in io.Reader) (nlines, nwords, nchars int) {
 		nchars += len(line) + 1 // +1 for \n
 	}
 	return nlines, nwords, nchars
+}
+
+func printCount(nlines, nwords, nchars int, filepath string) {
+	// どのフラグも立たない場合は全部
+	if !(*l || *w || *c) {
+		*l = true
+		*w = true
+		*c = true
+	}
+	var b strings.Builder
+	if *l {
+		fmt.Fprintf(&b, "	%d", nlines)
+	}
+	if *w {
+		fmt.Fprintf(&b, "	%d", nwords)
+	}
+	if *c {
+		fmt.Fprintf(&b, "	%d", nchars)
+	}
+	if filepath != "" {
+		fmt.Fprintf(&b, "	%s", filepath)
+	}
+	fmt.Println(b.String())
 }
